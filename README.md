@@ -15,6 +15,6 @@ chmod +x getcgs.sh
 cgs add main # add a new DreamDaemon instance, "main"
 cgs cfg-add main 5000 # set its port to 5000
 cgs sync main /directory/with/byond/binaries # set its directory
-cgs git main https://github.com/kachnov/cgserver # sync it with git
+cgs git main https://github.com/example/example # sync it with git
 cgs start main # start the server
 ```

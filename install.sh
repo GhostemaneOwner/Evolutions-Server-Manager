@@ -40,6 +40,14 @@ then
 	(sudo cp cgserver /usr/bin && sudo chmod +x /usr/bin/cgserver)
 	sudo rm cgserver
 
+	# make an "alias" for cgserver called cgs
+	if [ -f /usr/bin/cgs ]; then
+		sudo rm /usr/bin/cgs 
+	if
+	sudo touch /usr/bin/cgs
+	sudo chmod +x /usr/bin/cgs
+	(echo "cgserver \"\$@\"" | sudo tee /usr/bin/cgs) > /dev/null 2>&1
+
 	# get some temp files
 	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/start-cron-daemon.sh) > /dev/null 2>&1
 	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/start-git-daemon.sh) > /dev/null 2>&1
@@ -86,13 +94,8 @@ then
 	sudo chmod +x /usr/local/cgserver/start-cron-daemon.sh
 	sudo chmod +x /usr/local/cgserver/start-git-daemon.sh
 
-	# append an alias to bashrc
-	ALIAS="alias cgs='/usr/bin/cgserver'"
-	(sudo sed -i '/'$ALIAS'/d' ~/.bashrc) > /dev/null 2>&1
-	(echo "$ALIAS" | sudo tee --append ~/.bashrc) > /dev/null 2>&1
-
 	# success
-	echo "Successfully installed cgserver. Run cgserver --help for a list of commands. You can also use the alias 'cgs', after restarting the shell."
+	echo "Successfully installed cgserver. Run cgserver --help for a list of commands. You can also use the alias 'cgs'."
 
 	# display the version 
 	/usr/bin/cgserver version

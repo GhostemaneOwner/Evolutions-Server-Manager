@@ -1,8 +1,7 @@
 #!/bin/bash
 read -p "Running this script will kill any active DreamDaemon processes. Continue? (y/n) " -n 1 -r
 echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]
-then
+if [[ $REPLY =~ ^[Yy]$ ]]; then
 
 	# SIGKILL the daemons so they don't constantly error
 	(sudo killall -s SIGKILL start-cron-daemon.sh) > /dev/null 2>&1
@@ -33,7 +32,7 @@ then
 	# remove any existing cgserver executable
 	if [ -f /usr/bin/cgserver ]; then
 		sudo rm /usr/bin/cgserver
-	fi 
+	fi
 
 	# clone the executable into the bin
 	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/cgserver) > /dev/null 2>&1

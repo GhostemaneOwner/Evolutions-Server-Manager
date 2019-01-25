@@ -36,13 +36,13 @@ then
 	fi 
 
 	# clone the executable into the bin
-	(sudo wget https://github.com/kachnov/cgserver/blob/master/cgserver) > /dev/null 2>&1
+	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/cgserver) > /dev/null 2>&1
 	(sudo cp cgserver /usr/bin && sudo chmod +x /usr/bin/cgserver)
 	sudo rm cgserver
 
 	# get some temp files
-	(sudo wget https://github.com/kachnov/cgserver/blob/master/start-cron-daemon.sh) > /dev/null 2>&1
-	(sudo wget https://github.com/kachnov/cgserver/blob/master/start-git-daemon.sh) > /dev/null 2>&1
+	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/start-cron-daemon.sh) > /dev/null 2>&1
+	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/start-git-daemon.sh) > /dev/null 2>&1
 
 	# create /usr/local/cgserver if its not there
 	if ! [ -d /usr/local/cgserver ]; then 

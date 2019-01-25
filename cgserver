@@ -1,0 +1,566 @@
+#!/bin/bash
+sync_test () {
+	sudo touch /usr/local/cgserver/sync
+	while read x; do 
+		if [[ "$x" =~ .*"$1=".* ]]; then
+			return "$x"
+		fi
+	done < /usr/local/cgserver/sync
+	return ""
+}
+
+if ! [ -z "$1" ]; then
+	# start a new DD instance
+	if [ "$1" == "start" ] || [ "$1" == "--start" ]; then
+		if ! [ -z "$2" ]; then
+
+			SYNCDIR=""
+			sudo touch /usr/local/cgserver/sync
+			while read x; do
+				if [[ "$x" =~ .*"$2=".* ]]; then
+					TMP=(${x//=/ })
+					SYNCDIR=${TMP[1]}
+				fi
+			done < /usr/local/cgserver/sync
+
+			if ! [ -z "$SYNCDIR" ]; then
+				if [ -z "$(pgrep -f "cgserver-$2")" ]; then
+
+					# find a dmb/rsc pair in this directory (no subdirectories)
+					DMB=$(find "$SYNCDIR" -maxdepth 1 -name '*.dmb')
+					RSC=$(find "$SYNCDIR" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc')
+
+					# and if they both exist we can host
+					if [ -f "$DMB" ] && [ -f "$RSC" ]; then
+
+						PORT=10000 # default port
+						ARGS="" # no args
+						CFGDIR="/usr/local/cgserver/config/$2"
+
+						sudo touch $CFGDIR
+
+						# we need to get arguments from the configuration
+						while read x; do
+							# port
+							if [[ $x =~ .*"port=".* ]]; then 
+								PORT="$(echo $x | tr -dc '0-9')"
+							# one word args
+							elif [[ $x =~ .*"=true".* ]]; then 
+								ARGS+=" "
+								ARGS+="-${x::-5}"
+							# two word args
+							else
+								ARGS+=" "
+								ARGS+="-"
+								ARGS+=$x
+							fi
+						done < $CFGDIR
+
+						# absolute path just in case DreamDaemon is not in the PATH somehow
+						(/usr/local/bin/DreamDaemon "$DMB" $PORT"$ARGS" -params "cgserver-$2" &) > /dev/null 2>&1
+
+						# wait up to 1 second for the server to be found
+						SLEPT=0
+						while true; do
+							if ! [ -z "$(pgrep -f "cgserver-$2")" ]; then
+								break
+							else
+								sleep 0.05
+								SLEPT=$((SLEPT + 1))
+								if [ $SLEPT -ge 20 ]; then
+									break
+								fi
+							fi
+						done
+
+						if ! [ -z "$(pgrep -f "cgserver-$2")" ]; then
+
+							if ! [ -z $ARGS ]; then
+								echo "DreamDaemon instance $2 was successfully started on port $PORT with arg(s):$ARGS"
+							else 
+								echo "DreamDaemon instance $2 was successfully started on port $PORT with no arguments."
+							fi
+
+							# make sure server-states exists
+							sudo touch /usr/local/cgserver/server-states
+
+							# remove any lines already containing $2
+							sudo sed -i '/'$2'/d' /usr/local/cgserver/server-states
+
+							# add address info, etc to the meta file
+							if ! [ -d /usr/local/cgserver/meta ]; then
+								sudo mkdir /usr/local/cgserver/meta
+							fi
+
+							if ! [ -d /usr/local/cgserver/meta/"$2" ]; then
+								sudo mkdir /usr/local/cgserver/meta/"$2"
+							fi
+
+							sudo touch /usr/local/cgserver/meta/"$2"/address
+							ADDRESS=$(dig @resolver1.opendns.com A myip.opendns.com +short -4) # it just works (tm)
+							(echo "byond://$ADDRESS:$PORT" | sudo tee --append /usr/local/cgserver/meta/"$2"/address) > /dev/null 2>&1 
+
+							# add the new line
+							(echo "$2" | sudo tee --append /usr/local/cgserver/server-states) > /dev/null 2>&1
+
+							# start the global cron daemon if it doesn't already exist
+							/usr/bin/cgserver start-cron-daemon
+
+							# restart the git daemon for $2 if we even have a git
+							if [ -d "/usr/local/cgserver/git/$2" ]; then 
+								/usr/bin/cgserver start-git-daemon "$2"
+							fi
+
+						else 
+							echo "Error: DreamDaemon instance $2 failed to start! This is likely a code issue."
+						fi
+					else
+						echo "Error: There was a missing .dmb or .rsc file in $SYNCDIR, so DreamDaemon instance $2 couldn't start."
+					fi
+			
+				else 
+					echo "Error: Dreamdaemon instance $2 is already online; this command did nothing."
+				fi
+			else 
+				echo "Error: DreamDaemon instance $2 does not have a synced directory; run 'cgserver sync $2 \"\$PWD\"' to set it to the current directory."
+			fi
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+
+	# kill an existing DD instance 
+	elif [ "$1" == "stop" ] || [ "$1" == "--stop" ]; then
+		if ! [ -z "$2" ]; then
+			# make sure we're being ignored by the cron daemon
+			sudo touch /usr/local/cgserver/server-states && sudo sed -i '/'$2'/d' /usr/local/cgserver/server-states
+			# wipe meta
+			METADIR=/usr/local/cgserver/meta/"$2"
+			if [ -d "$METADIR" ]; then 
+				sudo rm -rf "$METADIR"
+			fi
+			# for good measure 
+			sleep 0.1
+			# find the process to stop
+			GREPPING=$(pgrep -f "cgserver-$2")
+			if ! [ -z "$GREPPING" ]; then
+				# kill the process
+				(kill -s SIGTERM $GREPPING) > /dev/null 2>&1
+				# attempt to cleanly shut down the server; allow up to 5 seconds
+				SLEPT=0
+				while true; do
+					if [ -z "$(pgrep -f "cgserver-$2")" ]; then
+						break
+					else
+						sleep 0.05
+						SLEPT=$((SLEPT + 1))
+						if [ $SLEPT -ge 100 ]; then
+							break
+						fi
+					fi
+				done
+
+				# process is dead: success
+				if [ -z "$(pgrep -f "cgserver-$2")" ]; then 
+					echo "DreamDaemon instance $2 was successfully shut down."
+				# not sucessful, use SIGKILL
+				else
+					echo "DreamDaemon instance $2 failed to cleanly shut down! Killing it with SIGKILL."
+					(kill -s SIGKILL $GREPPING) > /dev/null 2>&1
+					if [ -z "$(pgrep -f "cgserver-$2")" ]; then 
+						echo "Success."
+					else
+						echo "Error: DreamDaemon instance $2 failed to shut down via SIGKILL. How the fuck is this even possible? You'll have to shut it down manually, anyway."
+					fi
+				fi
+
+			else
+				echo "Error: DreamDaemon instance $2 was not online."
+			fi
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+
+	# restart an existing DD instance (mostly copypasta of the stop command)
+	elif [ "$1" == "restart" ] || [ "$1" == "--restart" ]; then
+		if ! [ -z "$2" ]; then
+			# kill the DD process with this name
+			GREPPING="$(pgrep -f "cgserver-$2")"
+			if ! [ -z $GREPPING ]; then
+				(kill -10 $GREPPING)  > /dev/null 2>&1
+				echo "Successfully sent the restart signal to DreamDaemon instance $2 ($GREPPING)."
+			else 
+				echo "Error: DreamDaemon instance $2 is not active."
+			fi
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+
+	# add a DD instance
+	elif [ "$1" == "add" ] || [ "$1" == "--add" ]; then
+		if ! [ -z "$2" ]; then
+
+			# make sure the servers file exists
+			sudo touch /usr/local/cgserver/servers
+
+			# also make an empty config file
+			sudo touch /usr/local/cgserver/config/"$2"
+
+			# remove any lines already containing the option
+			sudo sed -i '/'$2'/d' /usr/local/cgserver/servers 
+
+			# add the new line
+			(echo "$2" | sudo tee --append /usr/local/cgserver/servers) > /dev/null 2>&1
+
+			# sort the file
+			((sudo sort /usr/local/cgserver/servers) | sudo tee --append /usr/local/cgserver/__tmpservers) > /dev/null 2>&1
+		
+			# replace the file with the sorted one
+			sudo rm /usr/local/cgserver/servers
+			sudo mv /usr/local/cgserver/__tmpservers /usr/local/cgserver/servers
+
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+
+	# remove a DD instance
+	elif [ "$1" == "rem" ] || [ "$1" == "--rem" ] || [ "$1" == "remove" ] || [ "$1" == "--remove" ]; then
+		if ! [ -z "$2" ]; then
+
+			# remove the config file
+			CFGFILE="/usr/local/cgserver/config/$2"
+			if [ -f "$CFGFILE" ]; then
+				sudo rm "$CFGFILE"
+			fi
+
+			# make sure the servers file exists
+			sudo touch /usr/local/cgserver/servers
+
+			# remove any lines already containing the option
+			sudo sed -i '/'$2'/d' /usr/local/cgserver/servers 
+
+			# sort the file 
+			((sudo sort /usr/local/cgserver/servers) | sudo tee --append /usr/local/cgserver/__tmpservers) > /dev/null 2>&1
+		
+			# replace the file with the sorted one
+			sudo rm /usr/local/cgserver/servers
+			sudo mv /usr/local/cgserver/__tmpservers /usr/local/cgserver/servers
+
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+
+	# sync a DD instance with a directory (sync main /home/user/Github/spacestation13)
+	elif [ "$1" == "sync" ] || [ "$1" == "--sync" ]; then 
+		if [ ! -z "$2" ] && [ ! -z "$3" ]; then
+
+			# make sure the sync file exists
+			sudo touch /usr/local/cgserver/sync
+
+			# remove anylines already containing the option
+			sudo sed -i '/'$2'/d' /usr/local/cgserver/sync
+
+			# add the new line 
+			(echo "$2=$3" | sudo tee --append /usr/local/cgserver/sync) > /dev/null 2>&1
+
+			# sort the file
+			((sudo sort /usr/local/cgserver/sync) | sudo tee --append /usr/local/cgserver/__tmpsync) > /dev/null 2>&1
+
+			# replace the file with the sorted one
+			sudo rm /usr/local/cgserver/sync
+			sudo mv /usr/local/cgserver/__tmpsync /usr/local/cgserver/sync
+
+		else
+			echo "Not enough arguments: The format is 'sync [instance] [path]'."
+		fi
+
+	# add a git repository
+	elif [ "$1" == "git" ] || [ "$1" == "--git" ]; then
+
+		if [ ! -z "$2" ] && [ ! -z "$3" ]; then
+
+			# create the main git directory if its not there
+			if ! [ -d /usr/local/cgserver/git ]; then 
+				sudo mkdir -p /usr/local/cgserver/git
+			fi
+
+			# create the specific git directory if its not there
+			if [ ! -d /usr/local/cgserver/git/"$2" ] || [ -z "$(ls -A /usr/local/cgserver/git/$2)" ]; then 
+				
+				if [ ! -d /usr/local/cgserver/git/"$2" ]; then
+					sudo mkdir -p /usr/local/cgserver/git/"$2"
+				fi
+				
+				# clone git
+				(cd /usr/local/cgserver/git/"$2" && sudo git clone "$3" && echo "Successfully cloned $3 into /usr/local/cgserver/git/$2.")
+				
+				# git-boot
+				echo "Running cgserver git-boot..."
+				/usr/bin/cgserver git-boot
+
+			else
+				echo "$2 already has a repository."
+			fi
+
+		else 
+			echo "Not enough arguments: The format is 'git [instance] [url]'"
+		fi
+
+	# list active DD instance (pids & id)
+	elif [ "$1" == "list" ] || [ "$1" == "--list" ]; then
+
+		if ! [ -d /usr/local/cgserver/meta ]; then
+			sudo mkdir /usr/local/cgserver/meta
+		fi
+
+		# make sure the servers file exists
+		sudo touch /usr/local/cgserver/servers
+
+		# then read all instance names
+		while read x; do
+			if ! [ -z "$x" ]; then
+
+				if ! [ -d /usr/local/cgserver/meta/"$x" ]; then
+					sudo mkdir /usr/local/cgserver/meta/"$x"
+				fi
+
+				sudo touch /usr/local/cgserver/meta/"$x"/address
+
+				GREPPING="$(pgrep -f "cgserver-$x")"
+				if ! [ -z "$GREPPING" ]; then
+					ADDRESS=""
+					while read xx; do
+						ADDRESS=$xx
+						break
+					done < /usr/local/cgserver/meta/"$x"/address
+					echo "DreamDaemon Instance ($x): Online ($GREPPING) @ $ADDRESS"
+				else
+					echo "DreamDaemon Instance ($x): Offline"
+				fi
+			fi
+		done < /usr/local/cgserver/servers
+
+	# add a configuration option to a server
+	elif [ "$1" == "cfg-add" ] || [ "$1" == "--cfg-add" ]; then
+
+		# some options don't require an argument 
+		declare -A NOARGSNEEDED=()
+		for const in cgi core invisible logself map-threads once quiet safe suidself trace trusted ultrasafe unsafe_diag; do
+			NOARGSNEEDED[$const]=1
+		done
+
+		# cgserver config main port 5000
+		if [ ! -z "$2" ] && [ ! -z "$3" ]; then
+
+			# make sure the file exists
+			sudo touch /usr/local/cgserver/config/"$2"
+
+			# remove any lines already containing the option
+			sudo sed -i '/'$3'/d' /usr/local/cgserver/config/"$2"
+
+			# do we need an argument for this option
+			if [[ ${NOARGSNEEDED["$3"]} ]]; then
+				if [ -z "$4" ]; then
+					(echo "$3=true" | sudo tee --append /usr/local/cgserver/config/"$2") > /dev/null 2>&1
+				else 
+					echo "Too many arguments. The format is 'cgserver config name property'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+				fi
+			elif ! [ -z "$4" ]; then
+				# now append it
+				(echo "$3=$4" | sudo tee --append /usr/local/cgserver/config/"$2") > /dev/null 2>&1
+			else
+				echo "Not enough arguments. The format is 'cgserver config name property value'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+			fi
+		else
+			echo "Not enough arguments. The format is 'cgserver config name property [value]'. Not all properties require a value argument. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+		fi
+
+	# open the configuration file in vim for editing
+	elif [ "$1" == "cfg-open" ] || [ "$1" == "--cfg-open" ]; then
+
+		EDITOR="/usr/bin/vim"
+
+		if [ -f /usr/local/cgserver/editor ]; then
+			while read x; do
+				if ! [ -z "$x" ]; then
+					EDITOR=$x
+					break
+				fi
+			done < /usr/local/cgserver/editor
+		fi 
+
+		if ! [ -z "$2" ]; then
+			CFGFILE="/usr/local/cgserver/config/$2"
+			if [ -f "$CFGFILE" ]; then 
+				sudo $EDITOR "$CFGFILE"
+			else
+				echo "$CFGFILE does not exist; run 'cgserver add $2' to create it."
+			fi
+		else
+			echo "Not enough arguments. The format is 'cgserver cfg-open [instance]'"
+		fi
+
+	# remove a configuration option from a server
+	elif [ "$1" == "cfg-rem" ] || [ "$1" == "--cfg-rem" ]; then
+
+		if [ ! -z "$2" ] && [ ! -z "$3" ]; then
+			CFGFILE="/usr/local/cgserver/config/$2"
+			if [ -f "$CFGFILE" ]; then 
+				sudo sed -i '/'$3'/d' "$CFGFILE"
+			else 
+				echo "$CFGFILE does not exist."
+			fi
+		else 
+			echo "Not enough arguments. The format is 'cgserver cfg-rem [instance] [property]'"
+		fi
+
+	# set your default editor for cfg-open 
+	elif [ "$1" == "cfg-editor" ] || [ "$1" == "--cfg-editor" ]; then 
+
+		if [ ! -z "$2" ]; then
+			sudo touch /usr/local/cgserver/editor
+			(echo "$2" | sudo tee /usr/local/cgserver/editor) > /dev/null 2>&1 
+		else 
+			echo "Not enough arguments. One binary argument is needed."
+		fi
+
+	# start the global cron daemon 
+	elif [ "$1" == "start-cron-daemon" ] || [ "$1" == "--start-cron-daemon" ]; then 
+						
+		if [ -z "$(pgrep -f start-cron-daemon.sh)" ]; then
+			(cd /usr/local/cgserver && ./start-cron-daemon.sh &)
+			echo "Started the cron daemon."
+		fi
+
+	# start the git daemon for an instance
+	elif [ "$1" == "start-git-daemon" ] || [ "$1" == "--start-git-daemon" ]; then
+		if ! [ -z "$2" ]; then
+
+			# ensure the sync file exists
+			sudo touch /usr/local/cgserver/sync
+
+			# get the git dir
+			GITDIR="/usr/local/cgserver/git/$2"
+
+			if [ -d $GITDIR ]; then
+
+				# find the dir
+				CPDIR=""
+
+				while read x; do
+					if [[ $x =~ .*"$2=".* ]]; then
+						TMP=(${x//=/ })
+						CPDIR=${TMP[1]}
+						break
+					fi
+				done < /usr/local/cgserver/sync
+
+				if ! [ -z "$CPDIR" ]; then
+
+					IDENTIFIER="cgserver-git-daemon-$2-$CPDIR"
+					if [ -z "$(pgref -f $IDENTIFIER)" ]; then
+
+						# starts a process that will continually pull, rebuild and copy to ~~$PWD~~ the right dir
+						(cd /usr/local/cgserver && ./start-git-daemon.sh "$2" "$CPDIR" "$IDENTIFIER" &)
+
+						# say we did it
+						echo "Started the git daemon for DreamDaemon instance $2 ($GITDIR -> $CPDIR)"
+					fi
+
+				else
+					echo "Error: DreamDaemon instance $2 was not linked with a working directory in /usr/local/cgserver/sync. Unable to start its git daemon."
+				fi
+			else 
+				echo "Error: $GITDIR does not exist. Use 'cgserver git $2 [url]' to clone a new repo."
+			fi
+		else 
+			echo "Not enough arguments: One DreamDaemon instance argument is needed."
+		fi
+	# git-boot starts all git-daemons
+	elif [ "$1" == "git-boot" ] || [ "$1" == "--git-boot" ]; then
+		
+		# stop existing daemons first
+		echo "Stopping all existing git daemons..."
+		(sudo killall -s SIGKILL start-git-daemon.sh) > /dev/null 2>&1
+
+		# start the new ones
+		echo "Starting all git daemons..."
+		for d in /usr/local/cgserver/git/*; do
+
+			if ! [ "$d" == "*" ]; then
+				INSTANCE=$(basename $d)
+				echo "Running start-git-daemon $INSTANCE"
+				/usr/bin/cgserver start-git-daemon "$INSTANCE"
+			fi
+
+		done
+		
+	# boot calls git-boot, kills any existing cron-daemon, and calls start-cron-daemon
+	elif [ "$1" == "boot" ] || [ "$1" == "--boot" ]; then
+
+		# kill old processes
+		(sudo killall -s SIGKILL start-cron-daemon.sh) > /dev/null 2>&1
+
+		# create new processes
+		/usr/bin/cgserver git-boot
+		/usr/bin/cgserver start-cron-daemon
+
+	elif [ "$1" == "version" ] || [ "$1" == "--version" ]; then 
+		VERSION="19.1.0" # only needed here
+		echo "Running cgs version $VERSION"
+
+	# see a list of commands
+	elif [ "$1" == "help" ] || [ "$1" == "--help" ]; then
+
+		bold=$(tput bold)
+		norm=$(tput sgr0)
+		
+		if [ -z "$2" ]; then
+			echo "Commands: add, boot, cfg-add, cfg-editor, cfg-open, cfg-rem, git, git-boot, help, list, rem, restart, start, stop, start-cron-daemon, start-git-daemon, sync, version; Run 'cgserver --help [command]' to see more about a specific command."
+		else 
+			case "$2" in
+				"add")
+					echo "${bold}cgserver add [instance]${norm}: adds a new DreamDaemon instance [instance]";;
+				"boot")
+					echo "${bold}cgserver boot${norm}: restarts all git and cron daemons; does not affect DreamDaemon instances and can be safely used at any time";;
+				"cfg-add")
+					echo "${bold}cgserver cfg-add [instance] [setting] [value?]${norm}: adds a configuration [setting] to [instance]. [value] is only needed for some settings. For more information, see 'man DreamDaemon'";;
+				"cfg-editor")
+					echo "${bold}cgserver cfg-editor [binary]${norm}: sets the default editor for 'cgserver cfg-open'. Vim is used by default";;
+				"cfg-open")
+					echo "${bold}cgserver cfg-open [instance]${norm}: opens the settings file for [instance] in the text editor specified in 'cgserver cfg-editor'. Vim is used by default";;
+				"cfg-rem")
+					echo "${bold}cgserver cfg-rem [instance] [setting]${norm}: removes a configuration [setting] from [instance]";;
+				"git")
+					echo "${bold}cgserver git [instance] [url]${norm}: clones [url] into /usr/local/cgserver/git/[instance] and syncs it with [instance]; runs 'cgserver git-boot'";;
+				"git-boot")
+					echo "${bold}cgserver git-boot${norm}: reboots all git daemons";;
+				"help")
+					echo "${bold}cgserver --help${norm}: runs this command";;
+				"list")
+					echo "${bold}cgserver list${norm}: lists all DreamDaemon instances";;
+				"rem")
+					echo "${bold}cgserver rem [instance]${norm}: removes a DreamDaemon [instance], but preserves git info, which should be removed manually";;
+				"restart")
+					echo "${bold}cgserver restart [instance]${norm}: restarts an active DreamDaemon [instance]";;
+				"start")
+					echo "${bold}cgserver start [instance]${norm}: starts a DreamDaemon [instance]";;
+				"stop")
+					echo "${bold}cgserver stop [instance]${norm}: stops a DreamDaemon [instance]";;
+				"start-cron-daemon")
+					echo "${bold}cgserver start-cron-daemon${norm}: starts the cron daemon if it's not already running";;
+				"start-git-daemon")
+					echo "${bold}cgserver start-git-daemon [instance]${norm}: starts the git daemon for [instance] if its not already running";;
+				"sync")
+					echo "${bold}cgserver sync [instance] [directory]${norm}: syncs [instance] to [directory]; [directory] should contain the .dmb and .rsc files";;
+				"version")
+					echo "${bold}cgserver version${norm}: see the current version of cgserver";;
+			esac
+		fi
+
+	# unknown command
+	else
+		echo "Unknown command $1. Use 'cgserver --help' for a list of commands."
+	fi
+else
+	echo "Run 'cgserver --help' for a list of options."
+fi

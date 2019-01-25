@@ -8,6 +8,12 @@ chmod +x getcgs.sh
 ./getcgs.sh
 ```
 
+## Removal
+```
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
 ## Usage
 
 ### Setting up a server with automatic git updates and automatic restarting on crashes

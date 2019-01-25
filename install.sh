@@ -95,7 +95,7 @@ then
 	"$ALIAS"
 
 	# success
-	echo "Successfully installed cgserver. Run cgserver --help for a list of commands. You can also use the alias 'cgs'."
+	echo "Successfully installed cgserver. Run cgserver --help for a list of commands. You can also use the alias 'cgs', after restarting the shell."
 
 	# display the version 
 	/usr/bin/cgserver version

@@ -43,7 +43,7 @@ then
 	# make an "alias" for cgserver called cgs
 	if [ -f /usr/bin/cgs ]; then
 		sudo rm /usr/bin/cgs 
-	if
+	fi
 	sudo touch /usr/bin/cgs
 	sudo chmod +x /usr/bin/cgs
 	(echo "cgserver \"\$@\"" | sudo tee /usr/bin/cgs) > /dev/null 2>&1

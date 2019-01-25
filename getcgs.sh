@@ -6,4 +6,4 @@ if ! [ -d /home/.__cgstmp ]; then
 fi
 
 # download and install cgs
-(cd /home/.__cgstmp && (sudo wget WIP/install.sh) > /dev/null 2>&1 && sudo chmod +x install.sh && ./install.sh && cd && sudo rm -rf /home/.__cgstmp)
+(cd /home/.__cgstmp && (sudo wget https://github.com/kachnov/cgserver/blob/master/install.sh) > /dev/null 2>&1 && sudo chmod +x install.sh && ./install.sh && cd && sudo rm -rf /home/.__cgstmp)

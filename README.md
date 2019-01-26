@@ -10,6 +10,14 @@ chmod +x getcgs.sh
 ./getcgs.sh
 ```
 
+## Updating
+Updating to the latest git build simply requires you to run getcgs.sh again.
+<br>
+getcgs.sh will rarely be updated itself, so you can almost always use the same script you used to  install cgserver.
+```
+./getcgs.sh
+```
+
 ## Removal
 ```
 chmod +x uninstall.sh

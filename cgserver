@@ -194,7 +194,7 @@ if ! [ -z "$1" ]; then
 				(kill -10 $GREPPING)  > /dev/null 2>&1
 				echo "Successfully sent the restart signal to DreamDaemon instance $2 ($GREPPING)."
 			else 
-				echo "Error: DreamDaemon instance $2 is not active."
+				echo "Error: No DreamDaemon instance named '$2' is online."
 			fi
 		else 
 			echo "Not enough arguments: One DreamDaemon instance argument is needed."

@@ -1,5 +1,7 @@
 # cgserver
 A BYOND server manager for Linux
+<br>
+run cgs(erver) --help for a list of commands
 
 ## Installation
 ```
@@ -24,3 +26,8 @@ cgs sync main /directory/with/byond/binaries # set its directory
 cgs git main https://github.com/example/example # sync it with git
 cgs start main # start the server
 ```
+
+## Discord
+Major updates will be announced in the support discord
+<br>
+https://discord.gg/REpeuWE

@@ -56,6 +56,11 @@ if ! [ -z "$1" ]; then
 							fi
 						done < $CFGDIR
 
+						# force --trusted mode by default
+						if [[ ! "$ARGS" =~ .*"--safe".* ]] && [[ ! "$ARGS" =~ .*"--ultrasafe".* ]]; then 
+							ARGS+=" --trusted"
+						fi
+
 						# absolute path just in case DreamDaemon is not in the PATH somehow
 						(/usr/local/bin/DreamDaemon "$DMB" $PORT"$ARGS" -params "cgserver-$2" &) > /dev/null 2>&1
 

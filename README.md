@@ -38,4 +38,5 @@ cgs start main # start the server
 ## Discord
 Major updates will be announced in the support discord
 <br>
-https://discord.gg/REpeuWE
+[![discord](https://discordapp.com/api/guilds/536989523666665474/widget.png)](https://discord.gg/REpeuWE)
+

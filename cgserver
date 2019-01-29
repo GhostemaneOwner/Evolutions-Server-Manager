@@ -19,7 +19,7 @@ if ! [ -z "$1" ]; then
 			while read x; do
 				if [[ "$x" =~ .*"$2=".* ]]; then
 					TMP=(${x//=/ })
-					SYNCDIR=${TMP[1]}
+					SYNCDIR="${TMP[1]}"
 				fi
 			done < /usr/local/cgserver/sync
 

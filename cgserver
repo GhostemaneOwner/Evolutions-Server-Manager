@@ -173,10 +173,11 @@ if ! [ -z "$1" ]; then
 				else
 					echo "DreamDaemon instance $2 failed to cleanly shut down! Killing it with SIGKILL."
 					(kill -s SIGKILL $GREPPING) > /dev/null 2>&1
-					if [ -z "$(pgrep -f "cgserver-$2")" ]; then 
+					ID=$(pgrep -f "cgserver-$2")
+					if [ -z "$ID" ]; then 
 						echo "Success."
 					else
-						echo "Error: DreamDaemon instance $2 failed to shut down via SIGKILL. How the fuck is this even possible? You'll have to shut it down manually, anyway."
+						echo "Error: DreamDaemon instance $2 failed to shut down via SIGKILL. It will most likely kill itself eventually; otherwise you should run 'kill -s SIGKILL $ID' in a few seconds."
 					fi
 				fi
 

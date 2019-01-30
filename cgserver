@@ -9,6 +9,10 @@ sync_test () {
 	return ""
 }
 
+if [ -z $__CGSNAME ]; then 
+	__CGSNAME=`basename "$0"`; # cgserver
+fi
+
 if ! [ -z "$1" ]; then
 	# start a new DD instance
 	if [ "$1" == "start" ] || [ "$1" == "--start" ]; then
@@ -129,7 +133,7 @@ if ! [ -z "$1" ]; then
 					echo "Error: Dreamdaemon instance $2 is already online; this command did nothing."
 				fi
 			else 
-				echo "Error: DreamDaemon instance $2 does not have a synced directory; run 'cgserver sync $2 \"\$PWD\"' to set it to the current directory."
+				echo "Error: DreamDaemon instance $2 does not have a synced directory; run '$__CGSNAME sync $2 \"\$PWD\"' to set it to the current directory."
 			fi
 		else 
 			echo "Not enough arguments: One DreamDaemon instance argument is needed."
@@ -302,7 +306,7 @@ if ! [ -z "$1" ]; then
 				(cd /usr/local/cgserver/git/"$2" && sudo git clone "$3" && echo "Successfully cloned $3 into /usr/local/cgserver/git/$2.")
 				
 				# git-boot
-				echo "Running cgserver git-boot..."
+				echo "Running $__CGSNAME git-boot..."
 				/usr/bin/cgserver git-boot
 
 			else
@@ -370,16 +374,16 @@ if ! [ -z "$1" ]; then
 				if [ -z "$4" ]; then
 					(echo "$3=true" | sudo tee --append /usr/local/cgserver/config/"$2") > /dev/null 2>&1
 				else 
-					echo "Too many arguments. The format is 'cgserver config name property'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+					echo "Too many arguments. The format is '$__CGSNAME config name property'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
 				fi
 			elif ! [ -z "$4" ]; then
 				# now append it
 				(echo "$3=$4" | sudo tee --append /usr/local/cgserver/config/"$2") > /dev/null 2>&1
 			else
-				echo "Not enough arguments. The format is 'cgserver config name property value'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+				echo "Not enough arguments. The format is '$__CGSNAME config name property value'. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
 			fi
 		else
-			echo "Not enough arguments. The format is 'cgserver config name property [value]'. Not all properties require a value argument. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
+			echo "Not enough arguments. The format is '$__CGSNAME config name property [value]'. Not all properties require a value argument. Valid properties are: cd, cgi, core, home, invisible, log, logself, map-threads, once, params, ports, quiet, safe, suid, suidself, threads, trace, trusted, ultrasafe, unsafe_diag. All of these are passed directly to DreamDaemon, so run 'man DreamDaemon' to see what they do."
 		fi
 
 	# open the configuration file in vim for editing
@@ -401,10 +405,10 @@ if ! [ -z "$1" ]; then
 			if [ -f "$CFGFILE" ]; then 
 				sudo $EDITOR "$CFGFILE"
 			else
-				echo "$CFGFILE does not exist; run 'cgserver add $2' to create it."
+				echo "$CFGFILE does not exist; run '$__CGSNAME add $2' to create it."
 			fi
 		else
-			echo "Not enough arguments. The format is 'cgserver cfg-open [instance]'"
+			echo "Not enough arguments. The format is '$__CGSNAME cfg-open [instance]'"
 		fi
 
 	# remove a configuration option from a server
@@ -418,7 +422,7 @@ if ! [ -z "$1" ]; then
 				echo "$CFGFILE does not exist."
 			fi
 		else 
-			echo "Not enough arguments. The format is 'cgserver cfg-rem [instance] [property]'"
+			echo "Not enough arguments. The format is '$__CGSNAME cfg-rem [instance] [property]'"
 		fi
 
 	# set your default editor for cfg-open 
@@ -478,7 +482,7 @@ if ! [ -z "$1" ]; then
 					echo "Error: DreamDaemon instance $2 was not linked with a working directory in /usr/local/cgserver/sync. Unable to start its git daemon."
 				fi
 			else 
-				echo "Error: $GITDIR does not exist. Use 'cgserver git $2 [url]' to clone a new repo."
+				echo "Error: $GITDIR does not exist. Use '$__CGSNAME git $2 [url]' to clone a new repo."
 			fi
 		else 
 			echo "Not enough arguments: One DreamDaemon instance argument is needed."
@@ -523,52 +527,52 @@ if ! [ -z "$1" ]; then
 		norm=$(tput sgr0)
 		
 		if [ -z "$2" ]; then
-			echo "Commands: add, boot, cfg-add, cfg-editor, cfg-open, cfg-rem, git, git-boot, help, list, rem, restart, start, stop, start-cron-daemon, start-git-daemon, sync, version; Run 'cgserver --help [command]' to see more about a specific command."
+			echo "Commands: add, boot, cfg-add, cfg-editor, cfg-open, cfg-rem, git, git-boot, help, list, rem, restart, start, stop, start-cron-daemon, start-git-daemon, sync, version; Run '$__CGSNAME --help [command]' to see more about a specific command."
 		else 
 			case "$2" in
 				"add")
-					echo "${bold}cgserver add [instance]${norm}: adds a new DreamDaemon instance [instance]";;
+					echo "${bold}$__CGSNAME add [instance]${norm}: adds a new DreamDaemon instance [instance]";;
 				"boot")
-					echo "${bold}cgserver boot${norm}: restarts all git and cron daemons; does not affect DreamDaemon instances and can be safely used at any time";;
+					echo "${bold}$__CGSNAME boot${norm}: restarts all git and cron daemons; does not affect DreamDaemon instances and can be safely used at any time";;
 				"cfg-add")
-					echo "${bold}cgserver cfg-add [instance] [setting] [value?]${norm}: adds a configuration [setting] to [instance]. [value] is only needed for some settings. For more information, see 'man DreamDaemon'";;
+					echo "${bold}$__CGSNAME cfg-add [instance] [setting] [value?]${norm}: adds a configuration [setting] to [instance]. [value] is only needed for some settings. For more information, see 'man DreamDaemon'";;
 				"cfg-editor")
-					echo "${bold}cgserver cfg-editor [binary]${norm}: sets the default editor for 'cgserver cfg-open'. Vim is used by default";;
+					echo "${bold}$__CGSNAME cfg-editor [binary]${norm}: sets the default editor for '$__CGSNAME cfg-open'. Vim is used by default";;
 				"cfg-open")
-					echo "${bold}cgserver cfg-open [instance]${norm}: opens the settings file for [instance] in the text editor specified in 'cgserver cfg-editor'. Vim is used by default";;
+					echo "${bold}$__CGSNAME cfg-open [instance]${norm}: opens the settings file for [instance] in the text editor specified in '$__CGSNAME cfg-editor'. Vim is used by default";;
 				"cfg-rem")
-					echo "${bold}cgserver cfg-rem [instance] [setting]${norm}: removes a configuration [setting] from [instance]";;
+					echo "${bold}$__CGSNAME cfg-rem [instance] [setting]${norm}: removes a configuration [setting] from [instance]";;
 				"git")
-					echo "${bold}cgserver git [instance] [url]${norm}: clones [url] into /usr/local/cgserver/git/[instance] and syncs it with [instance]; runs 'cgserver git-boot'";;
+					echo "${bold}$__CGSNAME git [instance] [url]${norm}: clones [url] into /usr/local/cgserver/git/[instance] and syncs it with [instance]; runs '$__CGSNAME git-boot'";;
 				"git-boot")
-					echo "${bold}cgserver git-boot${norm}: reboots all git daemons";;
+					echo "${bold}$__CGSNAME git-boot${norm}: reboots all git daemons";;
 				"help")
-					echo "${bold}cgserver --help${norm}: runs this command";;
+					echo "${bold}$__CGSNAME --help${norm}: runs this command";;
 				"list")
-					echo "${bold}cgserver list${norm}: lists all DreamDaemon instances";;
+					echo "${bold}$__CGSNAME list${norm}: lists all DreamDaemon instances";;
 				"rem")
-					echo "${bold}cgserver rem [instance]${norm}: removes a DreamDaemon [instance], but preserves git info, which should be removed manually";;
+					echo "${bold}$__CGSNAME rem [instance]${norm}: removes a DreamDaemon [instance], but preserves git info, which should be removed manually";;
 				"restart")
-					echo "${bold}cgserver restart [instance]${norm}: restarts an active DreamDaemon [instance]";;
+					echo "${bold}$__CGSNAME restart [instance]${norm}: restarts an active DreamDaemon [instance]";;
 				"start")
-					echo "${bold}cgserver start [instance]${norm}: starts a DreamDaemon [instance]";;
+					echo "${bold}$__CGSNAME start [instance]${norm}: starts a DreamDaemon [instance]";;
 				"stop")
-					echo "${bold}cgserver stop [instance]${norm}: stops a DreamDaemon [instance]";;
+					echo "${bold}$__CGSNAME stop [instance]${norm}: stops a DreamDaemon [instance]";;
 				"start-cron-daemon")
-					echo "${bold}cgserver start-cron-daemon${norm}: starts the cron daemon if it's not already running";;
+					echo "${bold}$__CGSNAME start-cron-daemon${norm}: starts the cron daemon if it's not already running";;
 				"start-git-daemon")
-					echo "${bold}cgserver start-git-daemon [instance]${norm}: starts the git daemon for [instance] if its not already running";;
+					echo "${bold}$__CGSNAME start-git-daemon [instance]${norm}: starts the git daemon for [instance] if its not already running";;
 				"sync")
-					echo "${bold}cgserver sync [instance] [directory]${norm}: syncs [instance] to [directory]; [directory] should contain the .dmb and .rsc files";;
+					echo "${bold}$__CGSNAME sync [instance] [directory]${norm}: syncs [instance] to [directory]; [directory] should contain the .dmb and .rsc files";;
 				"version")
-					echo "${bold}cgserver version${norm}: see the current version of cgserver";;
+					echo "${bold}$__CGSNAME version${norm}: see the current version of cgserver";;
 			esac
 		fi
 
 	# unknown command
 	else
-		echo "Unknown command $1. Use 'cgserver --help' for a list of commands."
+		echo "Unknown command $1. Run '$__CGSNAME --help' for a list of commands."
 	fi
 else
-	echo "Run 'cgserver --help' for a list of options."
+	echo "Run '$__CGSNAME --help' for a list of options."
 fi

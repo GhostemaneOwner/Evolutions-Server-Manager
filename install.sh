@@ -43,9 +43,11 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	if [ -f /usr/bin/cgs ]; then
 		sudo rm /usr/bin/cgs 
 	fi
+
 	sudo touch /usr/bin/cgs
 	sudo chmod +x /usr/bin/cgs
-	(echo "cgserver \"\$@\"" | sudo tee /usr/bin/cgs) > /dev/null 2>&1
+
+	(echo "export __CGSNAME=\"cgs\" && cgserver \"\$@\" && export __CGSNAME=\"\"" | sudo tee /usr/bin/cgs) > /dev/null 2>&1
 
 	# get some temp files
 	(sudo wget https://raw.githubusercontent.com/kachnov/cgserver/master/start-cron-daemon.sh) > /dev/null 2>&1

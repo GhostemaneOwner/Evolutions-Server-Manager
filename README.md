@@ -35,6 +35,18 @@ cgs git main https://github.com/example/example # sync it with git
 cgs start main # start the server
 ```
 
+## DM hooks
+```DM
+// implement special behavior on /world/Reboot()
+/world/Reboot()
+  ..()
+  // we were sent the reboot signal by cgserver
+  if (reason == 3)
+    return world.custom_behavior()
+  // normal reboot
+  return ..(reason)
+```
+
 ## Discord
 Major updates will be announced in the support discord
 <br>

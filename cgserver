@@ -18,8 +18,10 @@ if ! [ -z "$1" ]; then
 			sudo touch /usr/local/cgserver/sync
 			while read x; do
 				if [[ "$x" =~ .*"$2=".* ]]; then
-					TMP=(${x//=/ })
+					tmpx=$(echo "$x" | sed 's/ /_/g')
+					TMP=(${tmpx//=/ })
 					SYNCDIR="${TMP[1]}"
+					SYNCDIR="$(echo "$SYNCDIR" | sed 's/_/ /g')"
 				fi
 			done < /usr/local/cgserver/sync
 

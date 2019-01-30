@@ -571,7 +571,7 @@ if ! [ -z "$1" ]; then
 
 	# unknown command
 	else
-		echo "Unknown command $1. Run '$__CGSNAME --help' for a list of commands."
+		echo "Unknown command '$1'. Run '$__CGSNAME --help' for a list of commands."
 	fi
 else
 	echo "Run '$__CGSNAME --help' for a list of options."

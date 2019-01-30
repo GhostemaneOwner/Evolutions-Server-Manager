@@ -469,7 +469,7 @@ if ! [ -z "$1" ]; then
 				if ! [ -z "$CPDIR" ]; then
 
 					IDENTIFIER="cgserver-git-daemon-$2-$CPDIR"
-					if [ -z "$(pgref -f $IDENTIFIER)" ]; then
+					if [ -z "$(pgrep -f $IDENTIFIER)" ]; then
 
 						# starts a process that will continually pull, rebuild and copy to ~~$PWD~~ the right dir
 						(cd /usr/local/cgserver && ./start-git-daemon.sh "$2" "$CPDIR" "$IDENTIFIER" &)

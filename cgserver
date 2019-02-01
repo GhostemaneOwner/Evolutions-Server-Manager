@@ -374,9 +374,20 @@ if ! [ -z "$1" ]; then
 					echo "  Memory Usage:$MEM%"
 
 				else
-					
+
 					# empty line above for readability
 					echo "" && echo "DreamDaemon Instance ($x): Offline"
+
+					# display arguments even though its offline
+					ARGS=""
+					while read xx; do 
+						ARGS="$xx"
+						break
+					done < /usr/local/cgserver/meta/"$x"/args
+
+					if ! [ -z "$ARGS" ]; then 
+						echo "  Arguments: $ARGS"
+					fi
 
 				fi
 

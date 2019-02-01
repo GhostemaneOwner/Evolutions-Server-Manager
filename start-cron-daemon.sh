@@ -11,9 +11,10 @@ while true; do
 				SYNCDIR=""
 				while read xx; do
 					if [[ $xx =~ .*"$x=".* ]]; then 
-						TMP=(${xx//=/ })
-						SYNCDIR=${TMP[1]}
-						break
+						tmpxx=$(echo "$xx" | sed 's/ /_/g')
+						TMP=(${tmpxx//=/ })
+						SYNCDIR="${TMP[1]}"
+						SYNCDIR="$(echo "$SYNCDIR" | sed 's/_/ /g')"
 					fi
 				done < /usr/local/cgserver/sync
 

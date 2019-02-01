@@ -352,11 +352,8 @@ if ! [ -z "$1" ]; then
 						break
 					done < /usr/local/cgserver/meta/"$x"/address
 
-					# empty line above for readability 
-					echo ""
-
-					# echo the instance with its pid and address
-					echo "DreamDaemon Instance ($x): Online ($GREPPING) @ $ADDRESS"
+					# echo the instance with its pid and address (empty line above for readability)
+					echo "" && echo "DreamDaemon Instance ($x): Online ($GREPPING) @ $ADDRESS"
 
 					ARGS=""
 					while read xx; do 
@@ -376,12 +373,16 @@ if ! [ -z "$1" ]; then
 					echo "  CPU Usage: $CPU%"
 					echo "  Memory Usage:$MEM%"
 
-					# empty line below for readability
-					echo ""
-
 				else
-					echo "DreamDaemon Instance ($x): Offline"
+					
+					# empty line above for readability
+					echo "" && echo "DreamDaemon Instance ($x): Offline"
+
 				fi
+
+				# empty line below for readability
+				echo ""
+
 			fi
 		done < /usr/local/cgserver/servers
 

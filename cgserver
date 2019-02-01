@@ -160,7 +160,7 @@ if ! [ -z "$1" ]; then
 			GREPPING=$(pgrep -f "cgserver-$2")
 			if ! [ -z "$GREPPING" ]; then
 				# kill the process
-				(kill -s SIGTERM $GREPPING) > /dev/null 2>&1
+				kill -s SIGTERM $GREPPING > /dev/null 2>&1
 				# attempt to cleanly shut down the server; allow up to 5 seconds
 				SLEPT=0
 				while true; do
@@ -181,7 +181,7 @@ if ! [ -z "$1" ]; then
 				# not sucessful, use SIGKILL
 				else
 					echo "DreamDaemon instance $2 failed to cleanly shut down! Killing it with SIGKILL."
-					(kill -s SIGKILL $GREPPING) > /dev/null 2>&1
+					kill -s SIGKILL $GREPPING > /dev/null 2>&1
 					ID=$(pgrep -f "cgserver-$2")
 					if [ -z "$ID" ]; then 
 						echo "Success."
@@ -203,7 +203,7 @@ if ! [ -z "$1" ]; then
 			# kill the DD process with this name
 			GREPPING="$(pgrep -f "cgserver-$2")"
 			if ! [ -z $GREPPING ]; then
-				(kill -10 $GREPPING)  > /dev/null 2>&1
+				kill -10 $GREPPING > /dev/null 2>&1
 				echo "Successfully sent the restart signal to DreamDaemon instance $2 ($GREPPING)."
 			else 
 				echo "Error: No DreamDaemon instance named '$2' is online."
@@ -510,7 +510,7 @@ if ! [ -z "$1" ]; then
 		
 		# stop existing daemons first
 		echo "Stopping all existing git daemons..."
-		(sudo killall -s SIGKILL start-git-daemon.sh) > /dev/null 2>&1
+		sudo killall -s SIGKILL start-git-daemon.sh > /dev/null 2>&1
 
 		# start the new ones
 		echo "Starting all git daemons..."
@@ -528,7 +528,7 @@ if ! [ -z "$1" ]; then
 	elif [ "$1" == "boot" ] || [ "$1" == "--boot" ]; then
 
 		# kill old processes
-		(sudo killall -s SIGKILL start-cron-daemon.sh) > /dev/null 2>&1
+		sudo killall -s SIGKILL start-cron-daemon.sh > /dev/null 2>&1
 
 		# create new processes
 		/usr/bin/cgserver git-boot

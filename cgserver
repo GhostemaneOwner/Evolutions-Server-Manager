@@ -360,7 +360,7 @@ if ! [ -z "$1" ]; then
 					done < /usr/local/cgserver/meta/"$x"/args
 
 					if ! [ -z "$ARGS" ]; then 
-						echo "Arguments: $ARGS"
+						echo "  Arguments: $ARGS"
 					fi
 
 				else

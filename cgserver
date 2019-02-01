@@ -394,12 +394,11 @@ if ! [ -z "$1" ]; then
 					fi
 
 				fi
-
-				# empty line below for readability
-				echo ""
-
 			fi
 		done < /usr/local/cgserver/servers
+
+		# ONE empty line below for readability
+		echo ""
 
 	# add a configuration option to a server
 	elif [ "$1" == "cfg-add" ] || [ "$1" == "--cfg-add" ]; then

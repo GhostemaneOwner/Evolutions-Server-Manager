@@ -364,7 +364,7 @@ if ! [ -z "$1" ]; then
 					if ! [ -z "$ARGS" ]; then 
 						echo "  Arguments: $ARGS"
 					else 
-						echo "  Arguments: None"
+						echo "  Arguments: -trusted"
 					fi
 
 					# use ps to get cpu usage and memory
@@ -390,7 +390,7 @@ if ! [ -z "$1" ]; then
 					if ! [ -z "$ARGS" ]; then 
 						echo "  Arguments: $ARGS"
 					else 
-						echo "  Arguments: None"
+						echo "  Arguments: -trusted"
 					fi
 
 				fi

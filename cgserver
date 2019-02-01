@@ -363,6 +363,14 @@ if ! [ -z "$1" ]; then
 						echo "  Arguments: $ARGS"
 					fi
 
+					# use ps to get cpu usage and memory
+					CPU=$(ps --no-headers -o %cpu -p "$GREPPING")
+					MEM=$(ps --no-headers -o %mem -p "$GREPPING")
+
+					# print them
+					echo "  CPU Usage:$CPU%"
+					echo "  Memory Usage:$MEM%"
+
 				else
 					echo "DreamDaemon Instance ($x): Offline"
 				fi

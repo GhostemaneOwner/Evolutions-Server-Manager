@@ -114,7 +114,7 @@ if ! [ -z "$1" ]; then
 
 							# also put the args in a file so we can retrieve it in cgs --list
 							sudo touch /usr/local/cgserver/meta/"$2"/args 
-							(echo "$ARGS" | sudo tee --append /usr/local/cgserver/meta/"$2"/args)
+							(echo "$ARGS" | sudo tee --append /usr/local/cgserver/meta/"$2"/args) > /dev/null 2>&1
 
 							# add the new line
 							(echo "$2" | sudo tee --append /usr/local/cgserver/server-states) > /dev/null 2>&1

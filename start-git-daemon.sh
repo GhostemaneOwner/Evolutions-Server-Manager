@@ -14,7 +14,7 @@ while true; do
 	sudo git fetch > /dev/null 2>&1
 	# if there's no DMB or no RSC build anyway
 	DMBTEST=$(find "$PWD" -maxdepth 1 -name '*.dmb')
-	RSCTEST=$(find "$PWD" -maxdepth 1 -name '*.rsc' ! -name "*.dyn.rsc")
+	RSCTEST=$(find "$PWD" -maxdepth 1 -name '*.rsc' ! -name "*.dyn.rsc" ! -name 'buggy.rsc')
 	# something changed remotely
 	if [ $(sudo git rev-parse HEAD) != $(sudo git rev-parse @{u}) ] || [ -z $DMBTEST ] || [ -z $RSCTEST ]; then
 		# pull the latest changes
@@ -34,7 +34,7 @@ while true; do
 		sudo /usr/local/bin/DreamMaker "$DME"
 		# find the new binaries which hopefully exist now
 		DMB=$(find "$PWD" -maxdepth 1 -name '*.dmb')
-		RSC=$(find "$PWD" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc')
+		RSC=$(find "$PWD" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc' ! -name 'buggy.rsc')
 		# build was sucessful, copy the new binares to $CPDIR
 		if [ -f "$DMB" ] && [ -f "$RSC" ]; then
 			cp --no-preserve=mode,ownership "$DMB" "$CPDIR"

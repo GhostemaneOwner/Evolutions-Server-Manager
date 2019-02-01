@@ -18,7 +18,7 @@ while true; do
 				done < /usr/local/cgserver/sync
 
 				DMBTEST=$(find "$SYNCDIR" -maxdepth 1 -name '*.dmb')
-				RSCTEST=$(find "$SYNCDIR" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc')
+				RSCTEST=$(find "$SYNCDIR" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc' ! -name 'buggy.rsc')
 
 				if [ ! -f "$DMBTEST" ] || [ ! -f "$RSCTEST" ]; then
 					echo "Cron Daemon: No .dmb or no .rsc file was found in $SYNCDIR; shutting down DD instance $2!"

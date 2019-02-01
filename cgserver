@@ -34,7 +34,7 @@ if ! [ -z "$1" ]; then
 
 					# find a dmb/rsc pair in this directory (no subdirectories)
 					DMB=$(find "$SYNCDIR" -maxdepth 1 -name '*.dmb')
-					RSC=$(find "$SYNCDIR" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc')
+					RSC=$(find "$SYNCDIR" -maxdepth 1 -name '*.rsc' ! -name '*.dyn.rsc' ! -name 'buggy.rsc')
 
 					# and if they both exist we can host
 					if [ -f "$DMB" ] && [ -f "$RSC" ]; then

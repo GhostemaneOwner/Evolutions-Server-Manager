@@ -368,7 +368,7 @@ if ! [ -z "$1" ]; then
 					MEM=$(ps --no-headers -o %mem -p "$GREPPING")
 
 					# print them
-					echo "  CPU Usage:$CPU%"
+					echo "  CPU Usage: $CPU%"
 					echo "  Memory Usage:$MEM%"
 
 				else

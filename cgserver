@@ -149,11 +149,11 @@ if ! [ -z "$1" ]; then
 		if ! [ -z "$2" ]; then
 			# make sure we're being ignored by the cron daemon
 			sudo touch /usr/local/cgserver/server-states && sudo sed -i '/'$2'/d' /usr/local/cgserver/server-states
-			# wipe meta
-			METADIR=/usr/local/cgserver/meta/"$2"
-			if [ -d "$METADIR" ]; then 
-				sudo rm -rf "$METADIR"
-			fi
+			# wipe meta (DISABLED: this way arguments get remembered for offline servers)
+			#METADIR=/usr/local/cgserver/meta/"$2"
+			#if [ -d "$METADIR" ]; then 
+			#	sudo rm -rf "$METADIR"
+			#fi
 			# for good measure 
 			sleep 0.1
 			# find the process to stop

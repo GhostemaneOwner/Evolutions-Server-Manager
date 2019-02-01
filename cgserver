@@ -86,7 +86,7 @@ if ! [ -z "$1" ]; then
 
 						if ! [ -z "$(pgrep -f "cgserver-$2")" ]; then
 
-							if ! [ -z $ARGS ]; then
+							if ! [ -z "$ARGS" ]; then
 								echo "DreamDaemon instance $2 was successfully started on port $PORT with arg(s):$ARGS"
 							else 
 								echo "DreamDaemon instance $2 was successfully started on port $PORT with no arguments."
@@ -107,9 +107,14 @@ if ! [ -z "$1" ]; then
 								sudo mkdir /usr/local/cgserver/meta/"$2"
 							fi
 
+							# lets put the address in a file so we can retrieve it in cgs --list
 							sudo touch /usr/local/cgserver/meta/"$2"/address
 							ADDRESS=$(dig @resolver1.opendns.com A myip.opendns.com +short -4) # it just works (tm)
 							(echo "byond://$ADDRESS:$PORT" | sudo tee --append /usr/local/cgserver/meta/"$2"/address) > /dev/null 2>&1 
+
+							# also put the args in a file so we can retrieve it in cgs --list
+							sudo touch /usr/local/cgserver/meta/"$2"/args 
+							(echo "$ARGS" | sudo tee --append /usr/local/cgserver/meta/"$2"/args)
 
 							# add the new line
 							(echo "$2" | sudo tee --append /usr/local/cgserver/server-states) > /dev/null 2>&1
@@ -336,15 +341,28 @@ if ! [ -z "$1" ]; then
 				fi
 
 				sudo touch /usr/local/cgserver/meta/"$x"/address
+				sudo touch /usr/local/cgserver/meta/"$x"/args
 
 				GREPPING="$(pgrep -f "cgserver-$x")"
 				if ! [ -z "$GREPPING" ]; then
+
 					ADDRESS=""
 					while read xx; do
 						ADDRESS=$xx
 						break
 					done < /usr/local/cgserver/meta/"$x"/address
 					echo "DreamDaemon Instance ($x): Online ($GREPPING) @ $ADDRESS"
+
+					ARGS=""
+					while read xx; do 
+						ARGS="$xx"
+						break
+					done < /usr/local/cgserver/meta/"$x"/args
+
+					if ! [ -z "$ARGS" ]; then 
+						echo "Arguments: $ARGS"
+					fi
+
 				else
 					echo "DreamDaemon Instance ($x): Offline"
 				fi

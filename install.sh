@@ -96,7 +96,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 	sudo chmod +x /usr/local/cgserver/start-git-daemon.sh
 
 	# success
-	echo "Successfully installed cgserver. Run cgserver --help for a list of commands. You can also use the alias 'cgs'."
+	echo "Successfully installed cgserver. Run 'cgserver --help' or 'cgs --help' for a list of commands."
 
 	# display the version 
 	/usr/bin/cgserver version
